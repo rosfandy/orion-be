@@ -18,8 +18,8 @@ const pinoLogger = pino({
 });
 
 export const logger: Logger = {
-  info(message: string): void {
-    pinoLogger.info(message);
+  info(message: string, data?: unknown): void {
+    pinoLogger.info(data ?? {}, message);
   },
 
   error(message: string, error?: unknown): void {

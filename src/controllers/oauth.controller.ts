@@ -42,7 +42,7 @@ export async function oauthCallback(request: Request, response: Response): Promi
   response.redirect(`${env.frontendUrl}/oauth/${getProvider(request)}/callback?success=true`);
 }
 
-export async function googleOneTap(request: Request, response: Response): Promise<void> {
+export async function googleOneTap(request: Request, response: Response): Promise<Response> {
   const body = request.body as Partial<GoogleOneTapDto>;
 
   if (typeof body.credential !== 'string' || !body.credential) {
