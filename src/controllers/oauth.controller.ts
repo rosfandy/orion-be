@@ -42,7 +42,7 @@ export async function oauthCallback(request: Request, response: Response): Promi
   response.redirect(`${env.frontendUrl}/oauth/${getProvider(request)}/callback?success=true`);
 }
 
-export async function googleOneTap(request: Request, response: Response): Promise<Response> {
+export async function googleOneTap(request: Request, response: Response): Promise<void> {
   const body = request.body as Partial<GoogleOneTapDto>;
 
   if (typeof body.credential !== 'string' || !body.credential) {
@@ -50,5 +50,11 @@ export async function googleOneTap(request: Request, response: Response): Promis
   }
 
   const result = await oauthService.authenticateOneTap(body.credential);
+  response.cookie('token', result.token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 24 * 60 * 60 * 1000,
+  });
   return presenter.Success(response, 200, result, 'Google One Tap authentication successful');
 }

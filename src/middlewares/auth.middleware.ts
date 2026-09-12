@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from 'express';
 import jwt, { type JwtPayload } from 'jsonwebtoken';
 import { prisma } from '../config/database.js';
 import { env } from '../config/env.js';
+import { logger } from '../config/logger.js';
 import { AppError } from '../errors/app-error.js';
 
 function getToken(request: Request): string | undefined {
@@ -22,12 +23,14 @@ export async function authenticate(request: Request, _response: Response, next: 
   const token = getToken(request);
 
   if (!token) {
+    logger.info(`${request.method} ${request.originalUrl}`, { message: 'No token provided' });
     next(new AppError('Authentication required', 401));
     return;
   }
 
   try {
     const payload = jwt.verify(token, env.jwtSecret) as JwtPayload;
+    logger.info(`${request.method} ${request.originalUrl}`, { message: 'Token decoded', sub: payload.sub });
 
     if (!payload.sub) {
       throw new Error('Token subject is missing');
@@ -45,6 +48,10 @@ export async function authenticate(request: Request, _response: Response, next: 
     request.authUser = user;
     next();
   } catch (error) {
+    logger.info(`${request.method} ${request.originalUrl}`, {
+      message: 'Token verification failed',
+      error: error instanceof Error ? error.message : String(error),
+    });
     next(error instanceof AppError ? error : new AppError('Invalid or expired token', 401));
   }
 }

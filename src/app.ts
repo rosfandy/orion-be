@@ -1,24 +1,30 @@
-import express, { type ErrorRequestHandler } from 'express';
+import express, { type ErrorRequestHandler, type Request } from 'express';
 import cors from 'cors';
-import pinoHttp from 'pino-http';
 import { env } from './config/env.js';
-import { logger, pinoLogger } from './config/logger.js';
+import { logger } from './config/logger.js';
 import { AppError } from './errors/app-error.js';
 import { presenter } from './presenters/api.presenter.js';
 import routes from './routes/index.js';
 
 const app = express();
 
-app.use(cors({ origin: env.frontendUrl, credentials: true }));
+app.use(cors({ origin: env.frontendUrl, credentials: true, allowedHeaders: ['Authorization', 'Content-Type'] }));
 app.use(express.json());
-app.use(pinoHttp({
-  logger: pinoLogger,
-  customLogLevel: (_request, response, error) => {
-    if (error || response.statusCode >= 500) return 'error';
-    if (response.statusCode >= 400) return 'warn';
-    return env.nodeEnv === 'production' ? 'silent' : 'info';
-  },
-}));
+
+app.use((request: Request, _response, next) => {
+  const logData = {
+    method: request.method,
+    endpoint: request.originalUrl,
+    payload: request.body,
+  };
+  if (request.method !== 'GET') {
+    logger.info(`${request.method} ${request.originalUrl}`, logData);
+  } else {
+    logger.info(`GET ${request.originalUrl}`);
+  }
+  next();
+});
+
 app.use('/api', routes);
 
 app.use((_request, response) => {
