@@ -120,14 +120,22 @@ export class WorkspaceService {
   }
 
   async addMember(userId: string, workspaceId: string, input: unknown) {
-    await this.requireCreator(userId, workspaceId);
-    const data = input as { email?: string };
-    const email = requireText(data.email, 'Email').toLowerCase();
-    const member = await prisma.user.findUnique({ where: { email }, select: { id: true, name: true, email: true } });
+    const workspace = await prisma.workspace.findFirst({
+      where: { OR: [{ id: workspaceId }, { graphId: workspaceId }] },
+    });
+    if (!workspace) throw new AppError('Workspace not found', 404);
+
+    await this.requireCreator(userId, workspace.id);
+    const data = input as { user_id?: string };
+    const targetUserId = requireText(data.user_id, 'user_id');
+    const member = await prisma.user.findUnique({
+      where: { id: targetUserId },
+      select: { id: true, name: true, email: true },
+    });
     if (!member) throw new AppError('User not found', 404);
     try {
       return await prisma.workspaceMember.create({
-        data: { workspaceId, userId: member.id, role: 'member' },
+        data: { workspaceId: workspace.id, userId: member.id, role: 'member' },
         include: { user: { select: { id: true, name: true, email: true } } },
       });
     } catch (error) {

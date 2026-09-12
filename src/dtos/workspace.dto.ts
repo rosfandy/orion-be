@@ -9,7 +9,7 @@ export interface UpdateWorkspaceDto {
 }
 
 export interface AddWorkspaceMemberDto {
-  email: string;
+  user_id: string;
 }
 
 export interface SearchUserByEmailQuery {
