@@ -1,36 +1,28 @@
-import app from "./app.js";
-import { env } from "./config/env.js";
-import { logger } from "./config/logger.js";
-import { closeNeo4j, initNeo4j } from "./config/neo4j.js";
-import { mountCollaboration } from "./server/collaboration.server.js";
+/**
+ * Server entrypoint.
+ *
+ * EXPORTS the fully-wired http.Server so Vercel (zero-config Express backend /
+ * WebSocket-capable functions) can attach HTTP + WebSocket upgrades to it.
+ * Vercel picks up the default export — do NOT call listen() here in
+ * production, Vercel binds the port and delivers upgrades itself.
+ *
+ * For local dev / legacy process mode, run src/dev.ts which calls listen()
+ * on this same exported server.
+ */
+import http from 'node:http';
+import app from './app.js';
+import { logger } from './config/logger.js';
+import { closeNeo4j, initNeo4j } from './config/neo4j.js';
+import { mountCollaboration } from './server/collaboration.server.js';
 
-async function startServer(): Promise<void> {
-  try {
-    await initNeo4j();
-    logger.info("Neo4j connection verified");
+// Single HTTP server hosts both Express routes and the collaboration WS upgrade.
+export const server = http.createServer(app);
+mountCollaboration(server);
 
-    // Single HTTP server hosts both Express routes and the collaboration WS upgrade.
-    const httpServer = app.listen(env.port, () => {
-      logger.info(`API running on http://localhost:${env.port}`);
-      logger.info(`Collaboration WS available at ws://localhost:${env.port}/collaboration`);
-    });
+// Warm Neo4j in the background — the driver connects lazily per session,
+// so requests are not blocked on the connectivity check.
+void initNeo4j()
+  .then(() => logger.info('Neo4j connection verified'))
+  .catch((err) => logger.error('Neo4j connectivity check failed', err));
 
-    mountCollaboration(httpServer);
-
-    const shutdown = async (): Promise<void> => {
-      httpServer.close(async () => {
-        await closeNeo4j();
-        process.exit(0);
-      });
-    };
-
-    process.once("SIGINT", shutdown);
-    process.once("SIGTERM", shutdown);
-  } catch (error) {
-    logger.error("Failed to initialize Neo4j", error);
-    await closeNeo4j();
-    process.exitCode = 1;
-  }
-}
-
-void startServer();
+export default server;

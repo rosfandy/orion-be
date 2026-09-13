@@ -5,9 +5,9 @@
   "description": "Express.js API built with TypeScript",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "tsx watch src/dev.ts",
     "build": "prisma generate --schema prisma && tsc -p tsconfig.json",
-    "start": "node dist/server.js",
+    "start": "node dist/dev.js",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
