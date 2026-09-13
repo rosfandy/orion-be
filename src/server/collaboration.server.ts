@@ -188,6 +188,7 @@ const wss = new ws.WebSocketServer({ noServer: true });
 
 export function mountCollaboration(httpServer: http.Server): void {
   httpServer.on('upgrade', (req, socket, head) => {
+    console.log('[collab] 🔌 WebSocket upgrade request received', { path: req.url });
     logger.info('[collab] upgrade request', { path: req.url });
     wss.handleUpgrade(req, socket, head, (wsConn) => {
       handleConnection(wsConn, req);
@@ -203,5 +204,6 @@ export function mountCollaboration(httpServer: http.Server): void {
     logger.info('[collab] server closed');
   });
 
+  console.log('[collab] ✅ WebSocket server is running — listening for upgrades on /collaboration');
   logger.info('[collab] Yjs collaboration server mounted on /collaboration');
 }
