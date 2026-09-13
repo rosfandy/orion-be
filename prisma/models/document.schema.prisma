@@ -1,0 +1,33 @@
+model Document {
+  id                 String   @id @default(uuid())
+  graphId            String   @unique @map("graph_id")
+  content            Json     @default("{}")
+  plainText          String   @default("") @map("plain_text")
+  yjsState           Bytes?   @map("yjs_state")
+  version            Int      @default(1)
+  workspaceGraphId   String?  @map("workspace_graph_id")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  versions           DocumentVersion[]
+
+  @@map("documents")
+}
+
+model DocumentVersion {
+  id            String   @id @default(uuid())
+  graphId       String   @map("graph_id")
+  sourceVersion Int      @map("source_version")
+  content       Json     @default("{}")
+  plainText     String   @default("") @map("plain_text")
+  yjsState      Bytes?   @map("yjs_state")
+  isManual      Boolean  @default(false) @map("is_manual")
+  createdBy     String?  @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  document      Document @relation(fields: [graphId], references: [graphId], onDelete: Cascade)
+
+  @@index([graphId, createdAt], name: "idx_doc_versions_graph_created")
+  @@index([graphId, sourceVersion], name: "idx_doc_versions_graph_source")
+  @@map("document_versions")
+}

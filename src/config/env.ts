@@ -16,4 +16,5 @@ export const env = {
   neo4jUsername: process.env.NEO4J_USERNAME ?? 'neo4j',
   neo4jPassword: process.env.NEO4J_PASSWORD ?? 'password',
   jwtSecret: jwtSecret ?? 'development-only-secret-change-me',
+  collaborationWebsocketUrl: process.env.COLLABORATION_WEBSOCKET_URL ?? `ws://localhost:${process.env.PORT ?? 3001}/collaboration`,
 };
